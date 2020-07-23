@@ -148,10 +148,10 @@ function displayAllDept() {
 
 function displayAllManager() {
     let managerArray = [];
-    connection.query(`SELECT name FROM manager`, function (err, res) {
+    connection.query(`select concat(e2.first_name, ' ', e2.last_name) as manager from employee as e join employee as e2 on e.manager_id = e2.id ;`, function (err, res) {
         // add to managerArray
         for (i = 0; i < res.length; i++) {
-            managerArray.push(res[i].name);
+            managerArray.push(res[i].manager);
         }
         inquirer.prompt({
                 name: 'manager',
@@ -160,7 +160,29 @@ function displayAllManager() {
                 choices: managerArray
             })
             .then(answer => {
-                const query = `SELECT e.id AS ID, e.first_name AS 'First Name', e.last_name AS 'Last Name', role.title AS Title, department.name AS Department, role.salary AS Salary, concat(m.first_name, ' ' ,  m.last_name) AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id WHERE department.name = '${answer.department}' ORDER BY ID ASC;`;
+                console.log(answer)
+                const query = `      
+select
+    e.id as ID
+    , e.first_name as 'First Name'
+    , e.last_name as 'Last Name'
+    , role.title as Title
+    , department.name as Department
+    , role.salary as Salary
+    , concat(m.first_name, ' ' , m.last_name) as Manager
+from
+    employee e
+left join employee m on
+    e.manager_id = m.id
+inner join role on
+    e.role_id = role.id
+inner join department on
+    role.department_id = department.id
+where
+    e.first_name = substring_index('${answer.manager}', ' ', 1)
+    and e.last_name = substring_index('${answer.manager}', ' ', -1)
+order by
+    ID asc;`;
                 connection.query(query, (err, res) => {
                     if (err) throw err;
 
@@ -173,24 +195,38 @@ function displayAllManager() {
     });
 };
 
-function addEmployee() {
+const addEmployee = async () => {
     let roleArray = [];
     let managerArray = [];
     //all roles and managers as a promise
-    Promise.all([
-        connection.query(`SELECT id, title FROM role ORDER BY title ASC;`),
-        connection.query(`SELECT employee.id, concat(employee.first_name, ' ' ,  employee.last_name) AS Employee FROM employee ORDER BY Employee ASC;`)
-    ]);
-    //roles into roleArray
-    for (i = 0; i < roles.length; i++) {
-        roleArray.push(roles[i].title);
+    const allResults = await Promise.all([
+        connection
+            .promise()
+            .query(`SELECT id, title FROM role ORDER BY title ASC;`)
+            .then(([rows, fields]) => {
+                return rows
+        }),
+        connection
+            .promise()
+            .query(`SELECT employee.id, concat(employee.first_name, ' ' ,  employee.last_name) AS Employee FROM employee ORDER BY Employee ASC;`)
+            .then(([rows, fields]) => {
+                return rows;
+        })
+    ])
+
+    console.log(allResults);
+        //roles into roleArray
+    for (i = 0; i < allResults[0].length; i++) {
+        roleArray.push(allResults[0][i].title);
     }
     //mangers into mangerArray
-    for (i = 0; i < managers.length; i++) {
-        managerArray.push(managers[i].Employee);
+    for (i = 0; i < allResults[1].length; i++) {
+        managerArray.push(allResults[1][i].Employee);
     }
-    //incase no manager
-    managerArray.unshift('--');
+    
+    console.log(roleArray);
+    console.log(managerArray);
+    ;
 
     inquirer.prompt([{
                 name: 'firstName',
@@ -234,21 +270,21 @@ function addEmployee() {
             let managerId = null;
 
             //id for role
-            for (i = 0; i < roles.length; i++) {
-                if (answer.role == roles[i].title) {
-                    roleId = roles[i].id;
+            for (i = 0; i < allResults[0].length; i++) {
+                if (answer.role == allResults[0][i].title) {
+                    roleId = allResults[0][i].id;
                 }
             }
             //id for manager
-            for (i = 0; i < managers.length; i++) {
-                if (answer.manager == managers[i].Employee) {
-                    managerId = managers[i].id;
+            for (i = 0; i < allResults[1].length; i++) {
+                if (answer.manager == allResults[1][i].Employee) {
+                    managerId = allResults[1][i].id;
                 }
             }
-
+            
             //Adding employee
             connection.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id)
-                VALUES ("${answer.firstName}", "${answer.lastName}", ${roleID}, ${managerID});`, (err, res) => {
+                VALUES ("${answer.firstName}", "${answer.lastName}", ${roleId}, ${managerId});`, (err, res) => {
                 if (err) return err;
 
                 // Confirm employee has been added
@@ -410,7 +446,7 @@ function updateManager() {
     }
 
 
-    .then(employees => {
+    then(employees => {
         inquirer.prompt([{
                     name: 'employee',
                     type: 'list',
