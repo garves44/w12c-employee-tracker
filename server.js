@@ -6,6 +6,9 @@ const promiseMysql = require('promise-mysql');
 const {
     connect
 } = require('http2');
+const {
+    rightPadder
+} = require('easy-table');
 
 // Connection Settings
 const connectSettings = {
@@ -45,7 +48,6 @@ function mainMenu() {
                 'Delete Employee',
                 'Delete ROLE',
                 'Delete DEPARTMENT',
-                'View Department Budgets'
             ]
         })
         .then((answer) => {
@@ -86,9 +88,6 @@ function mainMenu() {
                     break;
                 case 'Delete DEPARTMENT':
                     deleteDepartment();
-                    break;
-                case 'View Department Budgets':
-                    viewBudget();
                     break;
             }
         });
@@ -353,67 +352,66 @@ function updateRole() {
 
     //connection via promiseSQL
     promiseMysql.createConnection(connectSettings)
-    .then(conn => {
-        return Promise.all([
-            conn.query(`SELECT id, title FROM role ORDER BY title ASC;`),
-            conn.query(`SELECT employee.id, concat(employee.first_name, ' ', employee.last_name) AS Employee FROM employee ORDER BY Employee ASC;`)
-        ]);
-    })
-    .then(([roles, employees]) => {
-        //update roles array
-        for(i = 0; i < roles.length; i++){
-            roleArray.push(roles[i].title);
-        }
-
-        //update employee array
-        for(i = 0; i < employees.length; i++){
-            employeeArray.push(employees[i].Employee);
-        }
-
-        return Promise.all([roles, employees]);
-    })
-    .then(([roles, employees]) => {
-        inquirer.prompt([
-            {
-                name: 'employee',
-                type: 'list',
-                message: 'Select an employee.',
-                choices: employeeArray
-            },
-            {
-                name: 'role',
-                type: 'list',
-                message: 'what is the new role?',
-                choices: roleArray
-            }
-        ])
-        .then(answer => {
-            //creating variables
-            let roleId;
-            let employeeId;
-
-            for(i = 0; i < roles.length; i++) {
-                if (answer.role == roles[i].title) {
-                    roleId = roles[i].id;
-                }
+        .then(conn => {
+            return Promise.all([
+                conn.query(`SELECT id, title FROM role ORDER BY title ASC;`),
+                conn.query(`SELECT employee.id, concat(employee.first_name, ' ', employee.last_name) AS Employee FROM employee ORDER BY Employee ASC;`)
+            ]);
+        })
+        .then(([roles, employees]) => {
+            //update roles array
+            for (i = 0; i < roles.length; i++) {
+                roleArray.push(roles[i].title);
             }
 
-            for(i = 0; i < employees.length; i++){
-                if (answer.employee == employees[i].Employee){
-                    employeeId = employees[i].id;
-                }
+            //update employee array
+            for (i = 0; i < employees.length; i++) {
+                employeeArray.push(employees[i].Employee);
             }
 
-            //updating employee role
-            connection.query(`UPDATE employee SET role_id = ${roleId} WHERE id = ${employeeId};`, (err, res) => {
-                if(err) throw err;
+            return Promise.all([roles, employees]);
+        })
+        .then(([roles, employees]) => {
+            inquirer.prompt([{
+                        name: 'employee',
+                        type: 'list',
+                        message: 'Select an employee.',
+                        choices: employeeArray
+                    },
+                    {
+                        name: 'role',
+                        type: 'list',
+                        message: 'what is the new role?',
+                        choices: roleArray
+                    }
+                ])
+                .then(answer => {
+                    //creating variables
+                    let roleId;
+                    let employeeId;
 
-                console.log(`${answer.employee} role update to ${answer.role}...`);
-                //return to menu
-                mainMenu();
-            });
+                    for (i = 0; i < roles.length; i++) {
+                        if (answer.role == roles[i].title) {
+                            roleId = roles[i].id;
+                        }
+                    }
+
+                    for (i = 0; i < employees.length; i++) {
+                        if (answer.employee == employees[i].Employee) {
+                            employeeId = employees[i].id;
+                        }
+                    }
+
+                    //updating employee role
+                    connection.query(`UPDATE employee SET role_id = ${roleId} WHERE id = ${employeeId};`, (err, res) => {
+                        if (err) throw err;
+
+                        console.log(`${answer.employee} role update to ${answer.role}...`);
+                        //return to menu
+                        mainMenu();
+                    });
+                });
         });
-    });
 };
 
 function updateManager() {
@@ -422,57 +420,56 @@ function updateManager() {
 
     //connect via promiseSQL
     promiseMysql.createConnection(connectSettings)
-    .then(conn =>{
-        return conn.query(`SELECT employee.id, concat(employee.first_name, ' ', employee.last_name) AS Employee FROM employee ORDER BY Employee ASC;`);
-    })
-    .then(employees => {
-        for( i = 0; i < employees.length; i++){
-            employeeArray.push(employees[i].Employee);
-        }
-        return employees;
-    })
-    .then(employees => {
-        inquirer.prompt([
-            {
-                name: 'employee',
-                type: 'list',
-                message: 'Select employee to change.',
-                choices: employeeArray
-            },
-            {
-                name: 'manager',
-                type: 'list',
-                message: 'Select the manager of Employee.',
-                choices: employeeArray
+        .then(conn => {
+            return conn.query(`SELECT employee.id, concat(employee.first_name, ' ', employee.last_name) AS Employee FROM employee ORDER BY Employee ASC;`);
+        })
+        .then(employees => {
+            for (i = 0; i < employees.length; i++) {
+                employeeArray.push(employees[i].Employee);
             }
-        ])
-        .then(answer => {
-            //creating variables
-            let employeeId;
-            let managerId;
+            return employees;
+        })
+        .then(employees => {
+            inquirer.prompt([{
+                        name: 'employee',
+                        type: 'list',
+                        message: 'Select employee to change.',
+                        choices: employeeArray
+                    },
+                    {
+                        name: 'manager',
+                        type: 'list',
+                        message: 'Select the manager of Employee.',
+                        choices: employeeArray
+                    }
+                ])
+                .then(answer => {
+                    //creating variables
+                    let employeeId;
+                    let managerId;
 
-            for(i = 0; i < employees.length; i++){
-                if (answer.manager == employees[i].Employee){
-                    managerId = employees[i].id;
-                }
-            }
+                    for (i = 0; i < employees.length; i++) {
+                        if (answer.manager == employees[i].Employee) {
+                            managerId = employees[i].id;
+                        }
+                    }
 
-            for(i = 0; i < employees.length; i++){
-                if (answer.employee == employees[i].Employee){
-                    employeeId = employees[i].id;
-                }
-            }
+                    for (i = 0; i < employees.length; i++) {
+                        if (answer.employee == employees[i].Employee) {
+                            employeeId = employees[i].id;
+                        }
+                    }
 
-            //update employer with Manager ID
-            connection.query(`UPDATE employee SET manager_id = ${managerId} WHERE id = ${employeeId};`, (err, res) => {
-                if(err) throw err;
+                    //update employer with Manager ID
+                    connection.query(`UPDATE employee SET manager_id = ${managerId} WHERE id = ${employeeId};`, (err, res) => {
+                        if (err) throw err;
 
-                console.log(`${answer.employee} manager changed to ${answer.manager}...`);
-                //return to menu
-                mainMenu();
-            });
+                        console.log(`${answer.employee} manager changed to ${answer.manager}...`);
+                        //return to menu
+                        mainMenu();
+                    });
+                });
         });
-    });
 };
 
 function deleteEmployee() {
@@ -481,47 +478,168 @@ function deleteEmployee() {
 
     //connection via promiseSQL
     promiseMysql.createConnection(connectSettings)
-    .then(conn => {
-        return conn.query(`SELECT employee.id, concat(employee.first_name, ' ', employee.last_name) AS employee FROM employee ORDER BY Employee ASC;`);
-    })
-    .then(employees => {
-        for (i = 0; i < employees.length; i++){
-            employeeArray.push(employees[i].employee);
-        }
-
-        inquirer.prompt([
-            {
-                name: 'employee',
-                type: 'list',
-                message: 'What employee would you like to delete?',
-                choices: employeeArray
-            },
-            {
-                name: 'decision',
-                type: 'list',
-                message: 'Are you sure(CONFIRM DELETE)?',
-                choices: ['No', 'Yes']
+        .then(conn => {
+            return conn.query(`SELECT employee.id, concat(employee.first_name, ' ', employee.last_name) AS employee FROM employee ORDER BY Employee ASC;`);
+        })
+        .then(employees => {
+            for (i = 0; i < employees.length; i++) {
+                employeeArray.push(employees[i].employee);
             }
-        ])
-        .then(answer => {
-            if(answer.decision == 'Yes'){
-                let employeeId;
 
-                for (i = 0; employees.length; i++){
-                    if (answer.employee == employees[i].employee){
-                        employeeId = employees[i].id;
+            inquirer.prompt([{
+                        name: 'employee',
+                        type: 'list',
+                        message: 'What employee would you like to delete?',
+                        choices: employeeArray
+                    },
+                    {
+                        name: 'decision',
+                        type: 'confirm',
+                        message: 'Are you sure(CONFIRM DELETE)?',
+                        default: false
                     }
-                }
+                ])
+                .then(answer => {
+                    if (answer.decision) {
+                        let employeeId;
 
-                //delete selected employee
-                connection.query(`DELETE FROM employee WHERE id = ${employeeId};`, (err, res) => {
-                    if (err) throw err;
+                        for (i = 0; employees.length; i++) {
+                            if (answer.employee == employees[i].employee) {
+                                employeeId = employees[i].id;
+                            }
+                        }
 
-                    console.log(`Deleting ${answer.employee}...`);
-                    //return to menu
-                    mainMenu();
+                        //delete selected employee
+                        connection.query(`DELETE FROM employee WHERE id = ${employeeId};`, (err, res) => {
+                            if (err) throw err;
+
+                            console.log(`Deleting ${answer.employee}...`);
+                            //return to menu
+                            mainMenu();
+                        });
+                    };
                 });
-            };
         });
-    });
+};
+
+function deleteRole() {
+    //create role array
+    let roleArray = [];
+
+    promiseMysql.createConnection(connectSettings)
+        .then(conn => {
+            return conn.query(`SELECT id, title FROM role`);
+        })
+        .then(roles => {
+            for (i = 0; i < roles.length; i++) {
+                roleArray.push(roles[i].title);
+            }
+
+            inquirer.prompt([{
+                    name: 'delete',
+                    type: 'confirm',
+                    message: 'WARNING--- Deleting a role will remove all employees within the role. Would you like to continue?',
+                    default: false
+                }])
+                .then(answer => {
+                    if (!answer.delete) {
+                        //return to menu
+                        mainMenu();
+                    }
+                })
+                .then(() => {
+                    inquirer.prompt([{
+                                name: 'role',
+                                type: 'list',
+                                message: 'Which role would you like to delete?',
+                                choices: roleArray
+                            },
+                            {
+                                name: 'confirmDelete',
+                                type: 'input',
+                                message: 'Enter the name of the role you want to delete!'
+                            }
+                        ])
+                        .then(answer => {
+                            if (answer.confirmDelete === answer.role) {
+                                let roleId;
+
+                                for (i = 0; i < roles.length; i++) {
+                                    roleId = roles[i].id;
+                                }
+
+                                //remove role
+                                connection.query(`DELETE FROM role WHERE id = ${roleId};`, (err, res) => {
+                                    if (err) throw err;
+
+                                    console.log(`${answer.role} removed from roles...`);
+                                    //return to menu
+                                    mainMenu();
+                                })
+                            };
+                        });
+                });
+        });
+};
+
+function deleteDepartment() {
+    // creating usable array
+    let departmentArray = [];
+
+    //connection via promiseSQL
+    promiseMysql.createConnection(connectSettings)
+        .then(conn => {
+            return conn.query(`SELECT id, name FROM department;`);
+        })
+        .then(dept => {
+            for (i = 0; i < dept.length; i++) {
+                departmentArray.push(dept[i].name);
+            }
+
+            inquirer.prompt([{
+                    name: 'delete',
+                    type: 'confirm',
+                    message: 'WARNING --- Deleting a department will remove all roles and employees within the department. Do you wish to continue?',
+                    default: false
+                }])
+                .then(answer => {
+                    if (!answer.delete) {
+                        //return to menu
+                        mainMenu();
+                    }
+                })
+                .then(() => {
+                    inquirer.prompt([{
+                                name: 'department',
+                                type: 'list',
+                                message: 'Select a department to delete.',
+                                choices: departmentArray
+                            },
+                            {
+                                name: 'confirmDelete',
+                                type: 'input',
+                                message: 'Enter the department name you want to delete.'
+                            }
+                        ])
+                        .then(answer => {
+                            if (answer.confirmDelete === answer.department) {
+                                let departmentId;
+                                for (i = 0; i < dept.length; i++) {
+                                    if (answer.department == dept[i].name) {
+                                        departmentId = dept[i].id;
+                                    }
+                                }
+
+                                //delete department
+                                connection.query(`DELETE FROM department WHERE id = ${departmentId};`, (err, res) => {
+                                    if (err) throw err;
+
+                                    console.log(`${answer.department} is being deleted..`);
+                                    //return to menu
+                                    mainMenu();
+                                });
+                            };
+                        });
+                });
+        });
 };
