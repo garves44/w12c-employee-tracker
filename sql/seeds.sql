@@ -19,6 +19,6 @@ VALUES ('Jeremy', 'Collins', 1, null),
 ('Kevin', 'Dingle', 2, null),
 ('Kelli', 'Mattingly', 4, 4);
 
-SELECT * FROM department;
-SELECT * FROM role;
-SELECT * FROM employee;
+-- SELECT * FROM department;
+-- SELECT * FROM role;
+-- SELECT * FROM employee;

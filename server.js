@@ -1,31 +1,8 @@
 // DEPENDENCIES IMPORTED INTO APP
-const mysql = require('mysql');
+const mysql = require('mysql2');
 const inquirer = require('inquirer');
 const consoleTable = require('console.table');
-const promiseMysql = require('promise-mysql');
-const {
-    connect
-} = require('http2');
-const {
-    rightPadder
-} = require('easy-table');
-
-// Connection Settings
-const connectSettings = {
-    host: 'localhost',
-    port: 3306,
-    user: 'root',
-    password: 'password',
-    database: 'employees_db'
-};
-
-//Connect to database
-const connection = mysql.createConnection(connectSettings);
-connection.connect(err => {
-    if (err) throw err;
-    console.log(`Welcome to Employee Tracker `);
-    mainMenu();
-});
+const connection = require('./config/connection');
 
 //============Functions==============
 function mainMenu() {
@@ -48,6 +25,7 @@ function mainMenu() {
                 'Delete Employee',
                 'Delete ROLE',
                 'Delete DEPARTMENT',
+                'View Department Budgets'
             ]
         })
         .then((answer) => {
@@ -89,6 +67,7 @@ function mainMenu() {
                 case 'Delete DEPARTMENT':
                     deleteDepartment();
                     break;
+
             }
         });
 };
@@ -111,7 +90,7 @@ function displayAll() {
 function displayAllRoles() {
     let roleArray = [];
 
-    promiseMysql.createConnection(connectSettings)
+    mysql.createConnection(connectSettings)
         .then(conn => {
             return conn.query(`SELECT title FROM role`);
         })
@@ -146,7 +125,7 @@ function displayAllRoles() {
 function displayAllDept() {
     let departmentArray = [];
 
-    promiseMysql.createConnection(connectSettings)
+    mysql.createConnection(connectSettings)
         .then(conn => {
             return conn.query(`SELECT name FROM department`);
         })
@@ -182,7 +161,7 @@ function addEmployee() {
     let roleArray = [];
     let managerArray = [];
 
-    promiseMysql.createConnection(connectSettings)
+    mysql.createConnection(connectSettings)
         .then(conn => {
             //all roles and managers as a promise
             return Promise.all([
@@ -277,7 +256,7 @@ function addEmployee() {
 
 function addRole() {
     let deptArray = [];
-    promiseMysql.createConnection(connectSettings)
+    mysql.createConnection(connectSettings)
         .then(conn => {
             return conn.query(`SELECT id, name FROM department ORDER BY name ASC;`);
         })
@@ -351,7 +330,7 @@ function updateRole() {
     let roleArray = [];
 
     //connection via promiseSQL
-    promiseMysql.createConnection(connectSettings)
+    mysql.createConnection(connectSettings)
         .then(conn => {
             return Promise.all([
                 conn.query(`SELECT id, title FROM role ORDER BY title ASC;`),
@@ -419,7 +398,7 @@ function updateManager() {
     let employeeArray = [];
 
     //connect via promiseSQL
-    promiseMysql.createConnection(connectSettings)
+    mysql.createConnection(connectSettings)
         .then(conn => {
             return conn.query(`SELECT employee.id, concat(employee.first_name, ' ', employee.last_name) AS Employee FROM employee ORDER BY Employee ASC;`);
         })
@@ -477,7 +456,7 @@ function deleteEmployee() {
     let employeeArray = [];
 
     //connection via promiseSQL
-    promiseMysql.createConnection(connectSettings)
+    mysql.createConnection(connectSettings)
         .then(conn => {
             return conn.query(`SELECT employee.id, concat(employee.first_name, ' ', employee.last_name) AS employee FROM employee ORDER BY Employee ASC;`);
         })
@@ -526,7 +505,7 @@ function deleteRole() {
     //create role array
     let roleArray = [];
 
-    promiseMysql.createConnection(connectSettings)
+    mysql.createConnection(connectSettings)
         .then(conn => {
             return conn.query(`SELECT id, title FROM role`);
         })
@@ -587,7 +566,7 @@ function deleteDepartment() {
     let departmentArray = [];
 
     //connection via promiseSQL
-    promiseMysql.createConnection(connectSettings)
+    mysql.createConnection(connectSettings)
         .then(conn => {
             return conn.query(`SELECT id, name FROM department;`);
         })
