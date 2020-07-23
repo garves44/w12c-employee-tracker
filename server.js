@@ -3,6 +3,9 @@ const mysql = require('mysql');
 const inquirer = require('inquirer');
 const consoleTable = require('console.table');
 const promiseMysql = require('promise-mysql');
+const {
+    connect
+} = require('http2');
 
 // Connection Settings
 const connectSettings = {
@@ -129,6 +132,41 @@ function displayAllRoles() {
                 })
                 .then(answer => {
                     const query = `SELECT e.id AS ID, e.first_name AS 'First Name', e.last_name AS 'Last Name', role.title AS Title, department.name AS Department, role.salary AS Salary, concat(m.first_name, ' ' ,  m.last_name) AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id WHERE role.title = '${answer.role}' ORDER BY ID ASC`;
+                    connection.query(query, (err, res) => {
+                        if (err) throw err;
+
+                        //display results via console.table
+                        console.table(res);
+                        //return to menu
+                        mainMenu();
+                    });
+                });
+        });
+};
+
+function displayAllDept() {
+    let departmentArray = [];
+
+    promiseMysql.createConnection(connectSettings)
+        .then(conn => {
+            return conn.query(`SELECT name FROM department`);
+        })
+        .then(value => {
+            //add to departmentArray
+            for (i = 0; i < value.length; i++) {
+                departmentArray.push(value[i].name);
+            }
+        })
+        .then(() => {
+            //user selects department
+            inquirer.prompt({
+                    name: 'department',
+                    type: 'list',
+                    message: 'Choose a department to search.',
+                    choices: departmentArray
+                })
+                .then(answer => {
+                    const query = `SELECT e.id AS ID, e.first_name AS 'First Name', e.last_name AS 'Last Name', role.title AS Title, department.name AS Department, role.salary AS Salary, concat(m.first_name, ' ' ,  m.last_name) AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id WHERE department.name = '${answer.department}' ORDER BY ID ASC`;
                     connection.query(query, (err, res) => {
                         if (err) throw err;
 
