@@ -414,4 +414,63 @@ function updateRole() {
             });
         });
     });
-};a
+};
+
+function updateManager() {
+    //creating variables
+    let employeeArray = [];
+
+    //connect via promiseSQL
+    promiseMysql.createConnection(connectSettings)
+    .then(conn =>{
+        return conn.query(`SELECT employee.id, concat(employee.first_name, ' ', employee.last_name) AS Employee FROM employee ORDER BY Employee ASC`);
+    })
+    .then(employees => {
+        for( i = 0; i < employees.length; i++){
+            employeeArray.push(employees[i].Employee);
+        }
+        return employees;
+    })
+    .then(employees => {
+        inquirer.prompt([
+            {
+                name: 'employee',
+                type: 'list',
+                message: 'Select employee to change.',
+                choices: employeeArray
+            },
+            {
+                name: 'manager',
+                type: 'list',
+                message: 'Select the manager of Employee.',
+                choices: employeeArray
+            }
+        ])
+        .then(answer => {
+            //creating variables
+            let employeeId;
+            let managerId;
+
+            for(i = 0; i < employees.length; i++){
+                if (answer.manager == employees[i].Employee){
+                    managerId = employees[i].id;
+                }
+            }
+
+            for(i = 0; i < employees.length; i++){
+                if (answer.employee == employees[i].Employee){
+                    employeeId = employees[i].id;
+                }
+            }
+
+            //update employer with Manager ID
+            connection.query(`UPDATE employee SET manager_id = ${managerId} WHERE id = ${employeeId}`, (err, res) => {
+                if(err) throw err;
+
+                console.log(`${answer.employee} manager changed to ${answer.manager}...`);
+                //return to menu
+                mainMenu();
+            });
+        });
+    });
+};
