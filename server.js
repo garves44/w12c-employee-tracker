@@ -345,3 +345,73 @@ function addDepartment() {
         });
     });
 };
+
+function updateRole() {
+    //Create usable variables
+    let employeeArray = [];
+    let roleArray = [];
+
+    //connection via promiseSQL
+    promiseMysql.createConnection(connectSettings)
+    .then(conn => {
+        return Promise.all([
+            conn.query(`SELECT id, title FROM role ORDER BY title ASC`),
+            conn.query(`SELECT employee.id, concat(employee.first_name, ' ', employee.last_name) AS Employee FROM employee ORDER BY Employee ASC`)
+        ]);
+    })
+    .then(([roles, employees]) => {
+        //update roles array
+        for(i = 0; i < roles.length; i++){
+            roleArray.push(roles[i].title);
+        }
+
+        //update employee array
+        for(i = 0; i < employees.length; i++){
+            employeeArray.push(employees[i].Employee);
+        }
+
+        return Promise.all([roles, employees]);
+    })
+    .then(([roles, employees]) => {
+        inquirer.prompt([
+            {
+                name: 'employee',
+                type: 'list',
+                message: 'Select an employee.',
+                choices: employeeArray
+            },
+            {
+                name: 'role',
+                type: 'list',
+                message: 'what is the new role?',
+                choices: roleArray
+            }
+        ])
+        .then(answer => {
+            //creating variables
+            let roleId;
+            let employeeId;
+
+            for(i = 0; i < roles.length; i++) {
+                if (answer.role == roles[i].title) {
+                    roleId = roles[i].id;
+                }
+            }
+
+            for(i = 0; i < employees.length; i++){
+                if (answer.employee == employees[i].Employee){
+                    employeeId = employees[i].id;
+                }
+            }
+
+            //updating employee role
+            connection.query(`UPDATE employee SET role_id = ${roleId} WHERE id = ${employeeId}`, (err, res) => {
+                if(err) throw err;
+
+                console.log(`${answer.employee} role update to ${answer.role}...`);
+                //return to menu
+                mainMenu();
+            });
+        });
+    });
+};a
