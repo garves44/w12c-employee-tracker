@@ -96,7 +96,7 @@ function mainMenu() {
 
 function displayAll() {
     //display all employees
-    let query = "SELECT e.id, e.first_name, e.last_name, role.title, department.name AS department, role.salary, concat(m.first_name, ' ' ,  m.last_name) AS manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id ORDER BY ID ASC";
+    let query = `SELECT e.id, e.first_name, e.last_name, role.title, department.name AS department, role.salary, concat(m.first_name, ' ' ,  m.last_name) AS manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id ORDER BY ID ASC;`;
     //query connection
     connection.query(query, function (err, res) {
         if (err) throw err;
@@ -131,7 +131,7 @@ function displayAllRoles() {
                     choices: roleArray
                 })
                 .then(answer => {
-                    const query = `SELECT e.id AS ID, e.first_name AS 'First Name', e.last_name AS 'Last Name', role.title AS Title, department.name AS Department, role.salary AS Salary, concat(m.first_name, ' ' ,  m.last_name) AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id WHERE role.title = '${answer.role}' ORDER BY ID ASC`;
+                    const query = `SELECT e.id AS ID, e.first_name AS 'First Name', e.last_name AS 'Last Name', role.title AS Title, department.name AS Department, role.salary AS Salary, concat(m.first_name, ' ' ,  m.last_name) AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id WHERE role.title = '${answer.role}' ORDER BY ID ASC;`;
                     connection.query(query, (err, res) => {
                         if (err) throw err;
 
@@ -166,7 +166,7 @@ function displayAllDept() {
                     choices: departmentArray
                 })
                 .then(answer => {
-                    const query = `SELECT e.id AS ID, e.first_name AS 'First Name', e.last_name AS 'Last Name', role.title AS Title, department.name AS Department, role.salary AS Salary, concat(m.first_name, ' ' ,  m.last_name) AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id WHERE department.name = '${answer.department}' ORDER BY ID ASC`;
+                    const query = `SELECT e.id AS ID, e.first_name AS 'First Name', e.last_name AS 'Last Name', role.title AS Title, department.name AS Department, role.salary AS Salary, concat(m.first_name, ' ' ,  m.last_name) AS Manager FROM employee e LEFT JOIN employee m ON e.manager_id = m.id INNER JOIN role ON e.role_id = role.id INNER JOIN department ON role.department_id = department.id WHERE department.name = '${answer.department}' ORDER BY ID ASC;`;
                     connection.query(query, (err, res) => {
                         if (err) throw err;
 
@@ -187,8 +187,8 @@ function addEmployee() {
         .then(conn => {
             //all roles and managers as a promise
             return Promise.all([
-                conn.query('SELECT id, title FROM role ORDER BY title ASC'),
-                conn.query("SELECT employee.id, concat(employee.first_name, ' ' ,  employee.last_name) AS Employee FROM employee ORDER BY Employee ASC")
+                conn.query(`SELECT id, title FROM role ORDER BY title ASC;`),
+                conn.query(`SELECT employee.id, concat(employee.first_name, ' ' ,  employee.last_name) AS Employee FROM employee ORDER BY Employee ASC;`)
             ]);
         })
         .then(([roles, managers]) => {
@@ -264,7 +264,7 @@ function addEmployee() {
 
                     //Adding employee
                     connection.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id)
-                VALUES ("${answer.firstName}", "${answer.lastName}", ${roleID}, ${managerID})`, (err, res) => {
+                VALUES ("${answer.firstName}", "${answer.lastName}", ${roleID}, ${managerID});`, (err, res) => {
                         if (err) return err;
 
                         // Confirm employee has been added
@@ -280,7 +280,7 @@ function addRole() {
     let deptArray = [];
     promiseMysql.createConnection(connectSettings)
         .then(conn => {
-            return conn.query(`SELECT id, name FROM department ORDER BY name ASC`);
+            return conn.query(`SELECT id, name FROM department ORDER BY name ASC;`);
         })
         .then(departments => {
             //add to department Array
@@ -355,8 +355,8 @@ function updateRole() {
     promiseMysql.createConnection(connectSettings)
     .then(conn => {
         return Promise.all([
-            conn.query(`SELECT id, title FROM role ORDER BY title ASC`),
-            conn.query(`SELECT employee.id, concat(employee.first_name, ' ', employee.last_name) AS Employee FROM employee ORDER BY Employee ASC`)
+            conn.query(`SELECT id, title FROM role ORDER BY title ASC;`),
+            conn.query(`SELECT employee.id, concat(employee.first_name, ' ', employee.last_name) AS Employee FROM employee ORDER BY Employee ASC;`)
         ]);
     })
     .then(([roles, employees]) => {
@@ -405,7 +405,7 @@ function updateRole() {
             }
 
             //updating employee role
-            connection.query(`UPDATE employee SET role_id = ${roleId} WHERE id = ${employeeId}`, (err, res) => {
+            connection.query(`UPDATE employee SET role_id = ${roleId} WHERE id = ${employeeId};`, (err, res) => {
                 if(err) throw err;
 
                 console.log(`${answer.employee} role update to ${answer.role}...`);
@@ -423,7 +423,7 @@ function updateManager() {
     //connect via promiseSQL
     promiseMysql.createConnection(connectSettings)
     .then(conn =>{
-        return conn.query(`SELECT employee.id, concat(employee.first_name, ' ', employee.last_name) AS Employee FROM employee ORDER BY Employee ASC`);
+        return conn.query(`SELECT employee.id, concat(employee.first_name, ' ', employee.last_name) AS Employee FROM employee ORDER BY Employee ASC;`);
     })
     .then(employees => {
         for( i = 0; i < employees.length; i++){
@@ -464,13 +464,64 @@ function updateManager() {
             }
 
             //update employer with Manager ID
-            connection.query(`UPDATE employee SET manager_id = ${managerId} WHERE id = ${employeeId}`, (err, res) => {
+            connection.query(`UPDATE employee SET manager_id = ${managerId} WHERE id = ${employeeId};`, (err, res) => {
                 if(err) throw err;
 
                 console.log(`${answer.employee} manager changed to ${answer.manager}...`);
                 //return to menu
                 mainMenu();
             });
+        });
+    });
+};
+
+function deleteEmployee() {
+    //creating usable variables
+    let employeeArray = [];
+
+    //connection via promiseSQL
+    promiseMysql.createConnection(connectSettings)
+    .then(conn => {
+        return conn.query(`SELECT employee.id, concat(employee.first_name, ' ', employee.last_name) AS employee FROM employee ORDER BY Employee ASC;`);
+    })
+    .then(employees => {
+        for (i = 0; i < employees.length; i++){
+            employeeArray.push(employees[i].employee);
+        }
+
+        inquirer.prompt([
+            {
+                name: 'employee',
+                type: 'list',
+                message: 'What employee would you like to delete?',
+                choices: employeeArray
+            },
+            {
+                name: 'decision',
+                type: 'list',
+                message: 'Are you sure(CONFIRM DELETE)?',
+                choices: ['No', 'Yes']
+            }
+        ])
+        .then(answer => {
+            if(answer.decision == 'Yes'){
+                let employeeId;
+
+                for (i = 0; employees.length; i++){
+                    if (answer.employee == employees[i].employee){
+                        employeeId = employees[i].id;
+                    }
+                }
+
+                //delete selected employee
+                connection.query(`DELETE FROM employee WHERE id = ${employeeId};`, (err, res) => {
+                    if (err) throw err;
+
+                    console.log(`Deleting ${answer.employee}...`);
+                    //return to menu
+                    mainMenu();
+                });
+            };
         });
     });
 };
