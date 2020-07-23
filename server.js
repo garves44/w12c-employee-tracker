@@ -279,54 +279,69 @@ function addEmployee() {
 function addRole() {
     let deptArray = [];
     promiseMysql.createConnection(connectSettings)
-    .then(conn => {
-        return conn.query(`SELECT id, name FROM department ORDER BY name ASC`);
-    })
-    .then(departments => {
-        //add to department Array
-        for (i = 0; i < departments.length; i++){
-            deptArray.push(departments[i].name);
-        }
-        return departments;
-    })
-    .then(departments => {
-        inquirer.prompt([
-            {
-                name: 'role',
-                type: 'input',
-                message: 'Enter role title.'
-            },
-            {
-                name: 'salary',
-                type: 'number',
-                message: 'Enter a number for salary.'
-            },
-            {
-                name: 'dept',
-                type: 'list',
-                message: 'Department: ',
-                choices: deptArray
+        .then(conn => {
+            return conn.query(`SELECT id, name FROM department ORDER BY name ASC`);
+        })
+        .then(departments => {
+            //add to department Array
+            for (i = 0; i < departments.length; i++) {
+                deptArray.push(departments[i].name);
             }
-        ])
-        .then(answer => {
-            // Create usable variable
-            let deptId = null;
+            return departments;
+        })
+        .then(departments => {
+            inquirer.prompt([{
+                        name: 'role',
+                        type: 'input',
+                        message: 'Enter role title.'
+                    },
+                    {
+                        name: 'salary',
+                        type: 'number',
+                        message: 'Enter a number for salary.'
+                    },
+                    {
+                        name: 'dept',
+                        type: 'list',
+                        message: 'Department: ',
+                        choices: deptArray
+                    }
+                ])
+                .then(answer => {
+                    // Create usable variable
+                    let deptId = null;
 
-            for(i = 0; i < departments.length; i++){
-                if (answer.dept == departments[i].name){
-                    deptId = departments[i].id;
-                }
-            }
+                    for (i = 0; i < departments.length; i++) {
+                        if (answer.dept == departments[i].name) {
+                            deptId = departments[i].id;
+                        }
+                    }
 
-            //add role to table
-            connection.query(`INSERT INTO role (title, salary, department_id)
-            VALUES ('${answer.role}', ${answer.salary}, ${deptId})`, (err, res) => {
-                if (err) throw err;
-                console.log(`adding ${answer.role}!`);
-                //return to menu
-                mainMenu();
+                    //add role to table
+                    connection.query(`INSERT INTO role (title, salary, department_id)
+            VALUES ('${answer.role}', ${answer.salary}, ${deptId});`, (err, res) => {
+                        if (err) throw err;
+                        console.log(`adding ${answer.role}!`);
+                        //return to menu
+                        mainMenu();
 
-            });
+                    });
+                });
+        });
+};
+
+function addDepartment() {
+    inquirer.prompt({
+        name: 'department',
+        type: 'input',
+        message: 'Enter a name for the new Department'
+    }).then(answer => {
+        connection.query(`INSERT INTO department (name)
+                            VALUES ('${answer.department}');`, (err, res) => {
+            if (err) throw err;
+            console.log(`Adding ${answer.department}...`);
+            //return to menu
+            mainMenu();
         });
     });
 };
