@@ -178,3 +178,100 @@ function displayAllDept() {
                 });
         });
 };
+
+function addEmployee() {
+    let roleArray = [];
+    let managerArray = [];
+
+    promiseMysql.createConnection(connectSettings)
+        .then(conn => {
+            //all roles and managers as a promise
+            return Promise.all([
+                conn.query('SELECT id, title FROM role ORDER BY title ASC'),
+                conn.query("SELECT employee.id, concat(employee.first_name, ' ' ,  employee.last_name) AS Employee FROM employee ORDER BY Employee ASC")
+            ]);
+        })
+        .then(([roles, managers]) => {
+            //roles into roleArray
+            for (i = 0; i < roles.length; i++) {
+                roleArray.push(roles[i].title);
+            }
+            //mangers into mangerArray
+            for (i = 0; i < managers.length; i++) {
+                managerArray.push(managers[i].Employee);
+            }
+
+            //return arrays as promise
+            return Promise.all([roles, managers]);
+        })
+        .then(([roles, managers]) => {
+            //incase no manager
+            managerArray.unshift('--');
+
+            inquirer.prompt([{
+                        name: 'firstName',
+                        type: 'input',
+                        message: 'Enter first name of employee',
+                        validate: input => {
+                            if (input === '') {
+                                console.log(`Enter a name.`);
+                                return false;
+                            }
+                            return true;
+                        }
+                    },
+                    {
+                        name: 'lastName',
+                        type: 'input',
+                        message: 'Enter last name of employee',
+                        validate: input => {
+                            if (input === '') {
+                                console.log(`Enter a name.`);
+                                return false;
+                            }
+                            return true;
+                        }
+                    },
+                    {
+                        name: 'role',
+                        type: 'list',
+                        message: 'What is the role of the new employee?',
+                        choices: roleArray
+                    },
+                    {
+                        name: 'manager',
+                        type: 'list',
+                        message: 'who is the manager of the new employee?',
+                        choices: managerArray
+                    }
+                ])
+                .then(answer => {
+                    let roleId = null;
+                    let managerId = null;
+
+                    //id for role
+                    for (i = 0; i < roles.length; i++) {
+                        if (answer.role == roles[i].title) {
+                            roleId = roles[i].id;
+                        }
+                    }
+                    //id for manager
+                    for (i = 0; i < managers.length; i++) {
+                        if (answer.manager == managers[i].Employee) {
+                            managerId = managers[i].id;
+                        }
+                    }
+
+                    //Adding employee
+                    connection.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id)
+                VALUES ("${answer.firstName}", "${answer.lastName}", ${roleID}, ${managerID})`, (err, res) => {
+                        if (err) return err;
+
+                        // Confirm employee has been added
+                        console.log(`\n EMPLOYEE ${answer.firstName} ${answer.lastName} ADDED...\n `);
+                        //return to menu
+                        mainMenu();
+                    });
+                })
+        })
+}
