@@ -1,3 +1,11 @@
+/**
+ * @todo
+ * employeeController.updateManager
+ * employeeController.deleteEmployee
+ * roleController.deleteRole
+ * departmentController.deleteDepartment
+ */
+
 // DEPENDENCIES IMPORTED INTO APP
 const inquirer = require("inquirer");
 

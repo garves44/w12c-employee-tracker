@@ -64,78 +64,79 @@ var department = {
       });
   },
 
-  deleteDepartment: (callback = () => {}) => {
+  deleteDepartment: async (callback = () => {}) => {
     var connection = mysql.createConnection(dbconfig);
+    let records = await connection
+      .promise()
+      .query(`SELECT id, name FROM department;`)
+      .then(([rows, fields]) => {
+        return rows;
+      });
+
+    // console.log(records);
+    // return;
 
     // creating usable array
     let departmentArray = [];
 
-    //connection via promiseSQL
-    mysql
-      .createConnection(connectSettings)
-      .then((conn) => {
-        return conn.query(`SELECT id, name FROM department;`);
-      })
-      .then((dept) => {
-        for (i = 0; i < dept.length; i++) {
-          departmentArray.push(dept[i].name);
-        }
+    for (i = 0; i < records.length; i++) {
+      departmentArray.push(records[i].name);
+    }
 
+    inquirer
+      .prompt([
+        {
+          name: "delete",
+          type: "confirm",
+          message:
+            "WARNING --- Deleting a department will remove all roles and employees within the department. Do you wish to continue?",
+          default: false,
+        },
+      ])
+      .then((answer) => {
+        if (!answer.delete) {
+          //return to menu
+          callback();
+          connection.end();
+        }
+      })
+      .then(() => {
         inquirer
           .prompt([
             {
-              name: "delete",
-              type: "confirm",
-              message:
-                "WARNING --- Deleting a department will remove all roles and employees within the department. Do you wish to continue?",
-              default: false,
+              name: "department",
+              type: "list",
+              message: "Select a department to delete.",
+              choices: departmentArray,
+            },
+            {
+              name: "confirmDelete",
+              type: "input",
+              message: "Enter the department name you want to delete.",
             },
           ])
           .then((answer) => {
-            if (!answer.delete) {
-              //return to menu
-              callback();
-              connection.end();
-            }
-          })
-          .then(() => {
-            inquirer
-              .prompt([
-                {
-                  name: "department",
-                  type: "list",
-                  message: "Select a department to delete.",
-                  choices: departmentArray,
-                },
-                {
-                  name: "confirmDelete",
-                  type: "input",
-                  message: "Enter the department name you want to delete.",
-                },
-              ])
-              .then((answer) => {
-                if (answer.confirmDelete === answer.department) {
-                  let departmentId;
-                  for (i = 0; i < dept.length; i++) {
-                    if (answer.department == dept[i].name) {
-                      departmentId = dept[i].id;
-                    }
-                  }
-
-                  //delete department
-                  connection.query(
-                    `DELETE FROM department WHERE id = ${departmentId};`,
-                    (err, res) => {
-                      if (err) throw err;
-
-                      console.log(`${answer.department} is being deleted..`);
-                      //return to menu
-                      callback();
-                      connection.end();
-                    },
-                  );
+            if (answer.confirmDelete === answer.department) {
+              let departmentId;
+              for (i = 0; i < records.length; i++) {
+                if (answer.department == dept[i].name) {
+                  departmentId = records[i].id;
                 }
-              });
+              }
+
+              //delete department
+              connection.query(
+                `DELETE FROM department WHERE id = ${departmentId};`,
+                (err, res) => {
+                  if (err) throw err;
+
+                  console.log(`${answer.department} is being deleted..`);
+                  //return to menu
+                  callback();
+                  connection.end();
+                },
+              );
+            }
           });
       });
   },

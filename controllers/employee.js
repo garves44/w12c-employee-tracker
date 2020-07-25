@@ -63,22 +63,26 @@ var employee = {
     );
   },
 
-  updateManager: (callback = () => {}) => {
+  updateManager: async (callback = () => {}) => {
     var connection = mysql.createConnection(dbconfig);
 
+    
+
+    let records = await Promise.all([
+      connection
+      .promise()
+      .query(`SELECT employee.id, concat(employee.first_name, ' ', employee.last_name) AS Employee FROM employee ORDER BY Employee ASC;`)
+      .then(([rows, fields]) => {
+        return rows;
+      })
+    ])
     //creating variables
     let employeeArray = [];
 
-    //connect via promiseSQL
-    connection.query(
-      `SELECT employee.id, concat(employee.first_name, ' ', employee.last_name) AS Employee FROM employee ORDER BY Employee ASC;`,
-    );
-
-    for (i = 0; i < employees.length; i++) {
-      employeeArray.push(employees[i].Employee);
+    for (i = 0; i < records[0].length; i++) {
+      employeeArray.push(records[0][i].Employee);
     }
 
-    then((employees) => {
       inquirer
         .prompt([
           {
@@ -99,15 +103,15 @@ var employee = {
           let employeeId;
           let managerId;
 
-          for (i = 0; i < employees.length; i++) {
-            if (answer.manager == employees[i].Employee) {
-              managerId = employees[i].id;
+          for (i = 0; i < records[0].length; i++) {
+            if (answer.manager == records[0][i].Employee) {
+              managerId = records[0][i].id;
             }
           }
 
-          for (i = 0; i < employees.length; i++) {
-            if (answer.employee == employees[i].Employee) {
-              employeeId = employees[i].id;
+          for (i = 0; i < records[0].length; i++) {
+            if (answer.employee == records[0][i].Employee) {
+              employeeId = records[0][i].id;
             }
           }
 
@@ -126,8 +130,8 @@ var employee = {
             },
           );
         });
-    });
-  },
+    },
+  
 
   deleteEmployee: (callback = () => {}) => {
     var connection = mysql.createConnection(dbconfig);
